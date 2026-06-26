@@ -56,9 +56,10 @@ jobs:
           echo "=== dist 内容 ==="
           ls dist/
 
-      # 5. 同步到 Android
+      # 5. 同步到 Android（用 sync 而非 copy：sync 会生成 cordova.variables.gradle
+      #    等被 gitignore 的原生插件配置，copy 不会，导致 gradle 评估失败）
       - name: Sync to Android
-        run: npx cap copy android
+        run: npx cap sync android
 
       # 6. 打 Debug APK
       - name: Build Debug APK
