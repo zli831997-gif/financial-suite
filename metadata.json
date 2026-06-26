@@ -1,0 +1,6 @@
+{
+  "name": "Financial Suite",
+  "description": "个人财务全能管家 (Financial Suite) - 适合上班族的个人财务中枢",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
