@@ -43,6 +43,14 @@ public class AutoBookPlugin extends Plugin {
     }
 
     /**
+     * Service 侧调用：把通知数据通过 Plugin 的 notifyListeners 推给 JS。
+     * （Bridge 类无 notifyAllListeners；推送能力在 Plugin 上）
+     */
+    public void notifyFromService(String eventName, com.getcapacitor.JSObject data) {
+        notifyListeners(eventName, data);
+    }
+
+    /**
      * 查询本 app 是否已获得通知监听权限。
      * resolve({ enabled: boolean })
      */

@@ -139,10 +139,15 @@ public class AutoBookService extends NotificationListenerService {
      * 桥在 BridgeActivity 里，通过 ApplicationContext 找到 Plugin 实例。
      * Service 运行在独立进程，需借助 AutoBookPlugin 持有的 bridge 引用。
      */
+    /**
+     * 通过 AutoBookPlugin 把通知数据推送给 JS 层。
+     * Bridge 类无 notifyAllListeners，推送能力在 Plugin 上（notifyListeners），
+     * 故经 Plugin 单例转发。
+     */
     private void notifyBridge(String eventName, JSObject data) {
         AutoBookPlugin plugin = AutoBookPlugin.getInstance();
-        if (plugin != null && plugin.getBridgePublic() != null) {
-            plugin.getBridgePublic().notifyAllListeners(eventName, data);
+        if (plugin != null) {
+            plugin.notifyFromService(eventName, data);
         }
     }
 }
