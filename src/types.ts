@@ -28,6 +28,10 @@ export interface Transaction {
   note: string;
   important?: boolean;
   entityId?: string;       // 关联资产（房产/车），后续阶段用
+  /** 记录来源：手动 / 固定账单自动 / 通知监听自动（仅安卓） */
+  source?: 'manual' | 'template' | 'notification';
+  /** 去重键（通知自动记账用：packageName+postTime+text 的哈希），跨重启幂等 */
+  dedupeKey?: string;
 }
 
 export interface Asset {

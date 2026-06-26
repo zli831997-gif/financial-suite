@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, Input, Textarea } from '@tarojs/components';
+import Taro from '@tarojs/taro';
 import type { Transaction } from '@finance/types';
 import type { Account } from '@finance/logic/domain/accounts';
 import type { Template } from '@finance/logic/domain/templates';
@@ -11,6 +12,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Icon } from '../../components/Icon';
 import { Motion } from '../../components/Motion';
 import { confirmAsync, alertAsync } from '../../utils/platform';
+import { openAutoBookPermission } from '../../hooks/useAutoBook';
 import './index.css';
 
 /**
@@ -41,6 +43,15 @@ export default function Accounting() {
   // 触发重渲染的版本号（domain 层直接改 storage，需手动刷新视图）
   const [version, setVersion] = useState(0);
   const refresh = () => setVersion((v) => v + 1);
+
+  // 订阅自动记账刷新事件（安卓端收到支付通知写入后触发）
+  useEffect(() => {
+    const handler = () => refresh();
+    Taro.eventCenter.on('auto-book-refresh', handler);
+    return () => {
+      Taro.eventCenter.off('auto-book-refresh', handler);
+    };
+  }, []);
 
   // CSV 状态
   const [csvText, setCsvText] = useState('');
@@ -159,6 +170,27 @@ export default function Accounting() {
         </Motion>
       </View>
 
+      {/* 自动记账入口（仅安卓 APP 有实际效果，小程序/H5 静默） */}
+      <Motion
+        tapScale={0.98}
+        onClick={async () => {
+          const ok = await openAutoBookPermission();
+          alertAsync(
+            ok
+              ? '✅ 自动记账已开启，付款后将自动记录'
+              : '已跳转通知使用权设置。\n请在列表里开启「FinanceHub」，之后付款会自动记账。',
+          );
+        }}
+        className='bg-violet-50 border border-violet-100 rounded-2xl p-3 flex items-center gap-2'
+      >
+        <Text className='text-lg'>🤖</Text>
+        <View className='flex-1'>
+          <Text className='text-xs font-bold text-violet-900 block'>开启自动记账（微信/支付宝）</Text>
+          <Text className='text-[10px] text-violet-500 block'>付款后自动记录，仅安卓 APP 可用</Text>
+        </View>
+        <Icon name='chevronRight' size={14} className='text-violet-400' />
+      </Motion>
+
       {/* 账户余额 */}
       <View className='flex gap-2 overflow-x-auto pb-1'>
         {accounts.map((acc) => (
@@ -239,7 +271,9 @@ export default function Accounting() {
                       {t.type === 'income' ? '💰' : '☕'}
                     </View>
                     <View>
-                      <Text className='font-semibold text-slate-800 text-sm block'>{t.note}</Text>
+                      <Text className='font-semibold text-slate-800 text-sm block'>
+                        {t.source === 'notification' ? '🤖 ' : ''}{t.note}
+                      </Text>
                       <Text className='text-[10px] text-slate-400 block'>
                         {t.date} · {t.category}
                       </Text>

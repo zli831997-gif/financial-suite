@@ -2,6 +2,7 @@ import { storage } from '../../storage';
 import { KEYS } from '../../storage/keys';
 import type { Transaction } from '../../types';
 import { adjustAccountBalance, ensureAccounts } from './accounts';
+import { todayStr, addDaysStr } from './gamification';
 
 let _idSeq = 0;
 /** ID 生成：时间戳 + 自增序列（移植老版 dataManager.genId），避免批量撞 ID。 */
@@ -92,4 +93,98 @@ export function ensureRecords(): Transaction[] {
   saveRecords(DEMO_RECORDS);
   DEMO_RECORDS.forEach(rec => updateBalanceForRecord(rec));
   return DEMO_RECORDS;
+}
+
+/* ────────────────────────────────────────────────────────────
+ * 通知监听自动记账（仅安卓 APP，小程序/H5 无此能力）
+ * 去重机制仿 templates 的 AutoLog：按日记录已处理的 dedupeKey。
+ * ──────────────────────────────────────────────────────────── */
+
+type NotifLog = Record<string, string[]>; // { 'YYYY-MM-DD': dedupeKey[] }
+
+function getNotifLog(): NotifLog {
+  return storage.get<NotifLog>(KEYS.NOTIF_LOG) ?? {};
+}
+
+/** 今日此 dedupeKey 是否已自动记账（去重，防通知重复触发）。 */
+export function isNotifLoggedToday(dedupeKey: string): boolean {
+  const log = getNotifLog();
+  return (log[todayStr()] ?? []).includes(dedupeKey);
+}
+
+/**
+ * 关键词猜分类（通知里通常只有金额和商户名，没有标准分类）。
+ * 后续可接更准的商户库映射。
+ */
+function guessCategory(note: string, sourceApp: string): string {
+  const s = note + sourceApp;
+  if (/餐|食|饭|外卖|咖啡|茶饮|麦当劳|肯德基|美团|饿了么/.test(s)) return '餐饮';
+  if (/车|行|打车|滴滴|地铁|公交|加油|停车|高铁|机票/.test(s)) return '交通';
+  if (/购|买|超市|便利|京东|淘宝|拼多多|天猫|商城/.test(s)) return '购物';
+  if (/影|电影|游戏|玩|乐|会员|视频/.test(s)) return '娱乐';
+  if (/房|租|物业|水电|燃气/.test(s)) return '住房';
+  if (/医|药|院|诊|病/.test(s)) return '医疗';
+  if (/薪|工资|转入|到账|退款|退|返/.test(s)) return '其他';
+  return '其他';
+}
+
+export interface NotifRecordInput {
+  /** 来源 app 标识：'wechat' | 'alipay' */
+  sourceApp: 'wechat' | 'alipay';
+  amount: number;
+  type: 'income' | 'expense';
+  /** 通知文本（用于猜分类和备注） */
+  text: string;
+  /** 原生侧生成的去重键（packageName+postTime+text 哈希） */
+  dedupeKey: string;
+  /** 通知时间戳（毫秒），可选 */
+  timestamp?: number;
+}
+
+/**
+ * 从支付通知写入一条记录。已去重（同一 dedupeKey 今日只记一次）。
+ * @returns 写入的记录，或 null（重复/无效被跳过）
+ */
+export function addRecordFromNotification(input: NotifRecordInput): Transaction | null {
+  const { amount, type, text, dedupeKey, sourceApp, timestamp } = input;
+  if (!amount || amount <= 0 || !dedupeKey) return null;
+
+  // 去重：今日已处理过此通知则跳过
+  if (isNotifLoggedToday(dedupeKey)) return null;
+
+  const ts = timestamp ?? Date.now();
+  const d = new Date(ts);
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const appName = sourceApp === 'wechat' ? '微信' : '支付宝';
+  const accountId = sourceApp === 'wechat' ? 'acc_wechat' : 'acc_alipay';
+
+  const record: Transaction = {
+    id: `notif_${dedupeKey}`,
+    type,
+    amount,
+    category: guessCategory(text, sourceApp),
+    accountId,
+    accountName: appName,
+    date: dateStr,
+    time: timeStr,
+    note: `🤖${appName}自动记账`,
+    source: 'notification',
+    dedupeKey,
+  };
+
+  addRecord(record);
+
+  // 写去重日志 + 清理 30 天前（防 storage 膨胀）
+  const log = getNotifLog();
+  const today = todayStr();
+  if (!log[today]) log[today] = [];
+  if (!log[today].includes(dedupeKey)) log[today].push(dedupeKey);
+  const cutoff = addDaysStr(today, -30);
+  for (const date of Object.keys(log)) {
+    if (date < cutoff) delete log[date];
+  }
+  storage.set(KEYS.NOTIF_LOG, log);
+
+  return record;
 }

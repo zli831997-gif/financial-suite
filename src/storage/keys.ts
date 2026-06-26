@@ -9,6 +9,9 @@ export const KEYS = {
   REMINDERS: 'fin_reminders', // 账单提醒（阶段4 对齐老版）
   PIN: 'fin_pin', // 应用锁（阶段6 对齐老版，djb2+盐 hash，不随导出）
   ASSETS: 'fin_assets', // 资产（转小程序铺路，financeState 双写镜像）
+  LOANS: 'fin_loans', // 借贷（借款/还款追踪）
+  SOCIALS: 'fin_socials', // 人情往来（红白喜事/送礼）
+  NOTIF_LOG: 'fin_notif_log', // 通知自动记账去重日志（防重复，保留30天）
   TRANSACTIONS: 'finance_hub_transactions_v2', // 旧 key，仅供一次性迁移读，迁移后停用
   APP_STATE: 'finance_hub_app_state_v2', // → 拆解为 fin_assets / fin_user_profile / fin_growth (阶段2-4)
   STOCKS: 'finance_hub_stocks_v4', // → fin_portfolio (阶段4)
