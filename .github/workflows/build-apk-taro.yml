@@ -11,6 +11,8 @@ on:
       - 'src/storage/**'
       - 'src/utils/**'
       - 'src/types.ts'
+      - 'android/**'
+      - 'capacitor.config.ts'
       - '.github/workflows/build-apk-taro.yml'
   workflow_dispatch:
 
