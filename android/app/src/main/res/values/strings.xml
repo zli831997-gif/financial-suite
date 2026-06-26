@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FinanceHub</string>
+    <string name="title_activity_main">FinanceHub</string>
+    <string name="package_name">com.cvgo.finance</string>
+    <string name="custom_url_scheme">com.cvgo.finance</string>
+</resources>
