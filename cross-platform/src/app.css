@@ -1,0 +1,8 @@
+/* 全局样式：跨端公共部分。Tailwind 待阶段 A 后续引入 Taro 适配版后接入。 */
+
+page {
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+  font-size: 14px;
+}

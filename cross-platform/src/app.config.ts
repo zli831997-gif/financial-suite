@@ -1,0 +1,36 @@
+export default {
+  pages: [
+    'pages/index/index',
+    'pages/accounting/index',
+    'pages/reports/index',
+    'pages/profile/index',
+    'pages/deposits/index',
+    'pages/loan/index',
+    'pages/annuity/index',
+    'pages/assets/index',
+    'pages/stocks/index',
+    'pages/tax/index',
+    'pages/insurance/index',
+    'pages/pension/index',
+  ],
+  window: {
+    backgroundTextStyle: 'light',
+    navigationBarBackgroundColor: '#fff',
+    navigationBarTitleText: 'FinanceHub',
+    navigationBarTextStyle: 'black',
+  },
+  // 自定义 tabBar：用 Icon 组件 + Tailwind 渲染，免图标图片。
+  tabBar: {
+    custom: true,
+    color: '#94a3b8',
+    selectedColor: '#6366f1',
+    backgroundColor: '#ffffff',
+    borderStyle: 'white',
+    list: [
+      { pagePath: 'pages/index/index', text: '工具箱' },
+      { pagePath: 'pages/accounting/index', text: '记账' },
+      { pagePath: 'pages/reports/index', text: '报表' },
+      { pagePath: 'pages/profile/index', text: '我的' },
+    ],
+  },
+};

@@ -1,0 +1,3 @@
+# 子工程特有（上游 .gitignore 已覆盖 node_modules/dist 等）
+.taro-cache/
+.swc/

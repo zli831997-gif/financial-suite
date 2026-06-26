@@ -1,0 +1,73 @@
+name: Build Android APK (Taro 跨端)
+
+# 用跨端 Taro H5 产物打 APK。实现「一套源码」同时产出 APK + 微信小程序。
+# H5 产物来自 cross-platform/，与小程序共用同一份源码。
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'cross-platform/**'
+      - 'src/logic/**'
+      - 'src/storage/**'
+      - 'src/utils/**'
+      - 'src/types.ts'
+      - '.github/workflows/build-apk-taro.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 1. 安装主工程依赖（Capacitor 在主工程）
+      - name: Install main dependencies
+        run: npm install
+
+      # 2. 安装跨端工程依赖
+      - name: Install cross-platform dependencies
+        working-directory: cross-platform
+        run: npm install
+
+      # 3. 用 Taro 构建 H5 产物（一套源码，与小程序共用）
+      - name: Build Taro H5
+        working-directory: cross-platform
+        run: npm run build:h5
+
+      # 4. 用 Taro 产物覆盖主工程 dist（Capacitor webDir 指向 dist）
+      - name: Copy Taro output to webDir
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          cp -r cross-platform/dist/h5/* dist/
+          echo "=== dist 内容 ==="
+          ls dist/
+
+      # 5. 同步到 Android
+      - name: Sync to Android
+        run: npx cap copy android
+
+      # 6. 打 Debug APK
+      - name: Build Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      # 7. 上传 artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinanceHub-app-taro
+          path: android/app/build/outputs/apk/debug/app-debug.apk

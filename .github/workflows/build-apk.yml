@@ -1,8 +1,8 @@
-name: Build Android APK
+name: Build Android APK (Vite 原版 - 仅手动)
 
+# 已被 build-apk-taro.yml 取代（Taro 跨端版为一套源码默认产物）。
+# 保留此工作流仅作回退用途，需手动 workflow_dispatch 触发。
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 jobs:

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitAny": false,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@finance/*": ["../src/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "../node_modules/@types"],
+    "types": ["@tarojs/taro"]
+  },
+  "compileOnSave": false,
+  "include": ["./src", "./config", "./types.global.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}
