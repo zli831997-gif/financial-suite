@@ -4,7 +4,7 @@ name: Build Android APK (Taro 跨端)
 # H5 产物来自 cross-platform/，与小程序共用同一份源码。
 on:
   push:
-    branches: [master]
+    branches: [master, feat/cross-platform]
     paths:
       - 'cross-platform/**'
       - 'src/logic/**'
