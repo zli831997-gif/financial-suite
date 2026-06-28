@@ -6,6 +6,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Icon } from '../../components/Icon';
 import { Motion } from '../../components/Motion';
 import { MiniPie } from '../../components/MiniChart';
+import { EChart } from '../../components/EChart';
 import { confirmAsync, alertAsync } from '../../utils/platform';
 import './index.css';
 
@@ -295,7 +296,20 @@ export default function Stocks() {
           <CardContent className='p-4 space-y-3 text-center'>
             <Text className='font-extrabold text-slate-700 block text-xs'>持仓组合结构占比 (等效人民币)</Text>
             <View className='flex items-center justify-around'>
-              <MiniPie data={pieData} size={110} thickness={18} />
+              <EChart
+                height={130}
+                option={{
+                  tooltip: { trigger: 'item', formatter: '{b}: ¥{c} ({d}%)' },
+                  series: [{
+                    type: 'pie',
+                    radius: ['45%', '72%'],
+                    center: ['35%', '50%'],
+                    label: { show: false },
+                    labelLine: { show: false },
+                    data: pieData.map((ent) => ({ name: ent.name, value: ent.value, itemStyle: { color: ent.color } })),
+                  }],
+                }}
+              />
               <View className='flex flex-col gap-1.5'>
                 {pieData.map((ent) => (
                   <View key={ent.name} className='flex items-center gap-1'>

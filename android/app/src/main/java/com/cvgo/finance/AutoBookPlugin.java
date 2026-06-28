@@ -51,6 +51,36 @@ public class AutoBookPlugin extends Plugin {
     }
 
     /**
+     * 拉取并回放待处理的通知队列（APP 前台时 JS 调用）。
+     * 解决：APP 被杀期间收到的通知，重启后 Plugin 未就绪导致丢失。
+     * 返回队列内容后自动清空，并逐条推送 auto-book 事件。
+     */
+    @PluginMethod
+    public void fetchPendingNotifications(PluginCall call) {
+        try {
+            org.json.JSONArray pending = AutoBookService.fetchPending(getContext());
+            int count = pending.length();
+            for (int i = 0; i < count; i++) {
+                org.json.JSONObject item = pending.getJSONObject(i);
+                com.getcapacitor.JSObject data = new com.getcapacitor.JSObject();
+                data.put("sourceApp", item.optString("sourceApp"));
+                data.put("amount", item.optDouble("amount"));
+                data.put("type", item.optString("type"));
+                data.put("text", item.optString("text"));
+                data.put("dedupeKey", item.optString("dedupeKey"));
+                data.put("timestamp", item.optLong("timestamp"));
+                notifyListeners("auto-book", data);
+            }
+            if (count > 0) AutoBookService.clearQueue(getContext());
+            JSObject ret = new JSObject();
+            ret.put("count", count);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("拉取待处理通知失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 查询本 app 是否已获得通知监听权限。
      * resolve({ enabled: boolean })
      */

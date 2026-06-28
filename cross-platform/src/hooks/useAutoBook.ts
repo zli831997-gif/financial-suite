@@ -19,6 +19,8 @@ interface AutoBookPluginProxy {
   addListener?: (event: string, cb: (data: any) => void) => Promise<any> | void;
   checkPermission?: () => Promise<{ enabled: boolean }>;
   openPermissionSettings?: () => Promise<void>;
+  /** 拉取并回放待处理通知队列（APP 前台时调用，补回被杀期间丢失的通知） */
+  fetchPendingNotifications?: () => Promise<{ count: number }>;
 }
 
 export function useAutoBook(): number {
@@ -33,23 +35,57 @@ export function useAutoBook(): number {
       .then(({ registerPlugin }) => {
         try {
           const AutoBook = registerPlugin('AutoBook') as AutoBookPluginProxy;
-          if (typeof AutoBook.addListener !== 'function') return;
-          const handleP = AutoBook.addListener('auto-book', (data: any) => {
-            const record = addRecordFromNotification({
-              sourceApp: data.sourceApp,
-              amount: data.amount,
-              type: data.type,
-              text: data.text,
-              dedupeKey: data.dedupeKey,
-              timestamp: data.timestamp,
+
+          // 1. 监听实时通知事件
+          if (typeof AutoBook.addListener === 'function') {
+            const handleP = AutoBook.addListener('auto-book', (data: any) => {
+              const record = addRecordFromNotification({
+                sourceApp: data.sourceApp,
+                amount: data.amount,
+                type: data.type,
+                text: data.text,
+                dedupeKey: data.dedupeKey,
+                timestamp: data.timestamp,
+              });
+              if (record) setRefreshKey((k) => k + 1);
             });
-            if (record) setRefreshKey((k) => k + 1);
-          });
-          cleanup = () => {
-            Promise.resolve(handleP)
-              .then((h: any) => h?.remove?.())
-              .catch(() => {});
+            cleanup = () => {
+              Promise.resolve(handleP)
+                .then((h: any) => h?.remove?.())
+                .catch(() => {});
+            };
+          }
+
+          // 2. APP 启动/恢复前台时，回放待处理队列（补回被杀期间的通知）
+          const replay = () => {
+            if (typeof AutoBook.fetchPendingNotifications === 'function') {
+              AutoBook.fetchPendingNotifications()
+                .then((res) => {
+                  if (res?.count > 0) setRefreshKey((k) => k + 1);
+                })
+                .catch(() => {});
+            }
           };
+          replay(); // 挂载即拉一次
+          // 监听 APP 恢复前台（Capacitor App 插件，若可用）
+          // webpackIgnore: true 让 webpack 不静态解析此 import（小程序环境无此包）
+          // @ts-ignore - 动态加载 @capacitor/app，跨端工程未安装其类型
+          import(/* webpackIgnore: true */ '@capacitor/app')
+            .then(({ App }: any) => {
+              const handler = App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
+                if (isActive) replay();
+              });
+              cleanup = (() => {
+                const prev = cleanup;
+                return () => {
+                  prev?.();
+                  handler.then((h: any) => h.remove()).catch(() => {});
+                };
+              })();
+            })
+            .catch(() => {
+              // 无 @capacitor/app，仅挂载时拉一次
+            });
         } catch {
           // H5 环境无 AutoBook 插件，静默
         }

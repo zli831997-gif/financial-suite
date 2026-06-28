@@ -13,6 +13,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Icon } from '../../components/Icon';
 import { Motion } from '../../components/Motion';
 import { MiniPie } from '../../components/MiniChart';
+import { EChart } from '../../components/EChart';
 import { confirmAsync } from '../../utils/platform';
 import './index.css';
 
@@ -266,7 +267,21 @@ export default function Assets() {
             <CardContent className='p-4'>
               <Text className='text-xs font-bold text-slate-500 mb-3 block'>资产流动性分布</Text>
               <View className='flex items-center justify-around'>
-                <MiniPie data={pieData} size={130} thickness={22} />
+                <EChart
+                  height={140}
+                  option={{
+                    tooltip: { trigger: 'item', formatter: '{b}: ¥{c} ({d}%)' },
+                    legend: { orient: 'vertical', right: 0, top: 'center', textStyle: { fontSize: 10 } },
+                    series: [{
+                      type: 'pie',
+                      radius: ['42%', '70%'],
+                      center: ['40%', '50%'],
+                      avoidLabelOverlap: false,
+                      label: { show: false },
+                      data: pieData.map((d) => ({ name: d.name, value: d.value, itemStyle: { color: d.color } })),
+                    }],
+                  }}
+                />
                 <View className='flex flex-col gap-1.5'>
                   {pieData.map((d) => (
                     <View key={d.name} className='flex items-center gap-1.5'>

@@ -22,6 +22,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Icon } from '../../components/Icon';
 import { Motion } from '../../components/Motion';
 import { MiniTrend } from '../../components/MiniChart';
+import { EChart } from '../../components/EChart';
 import './index.css';
 
 /**
@@ -392,21 +393,45 @@ function CashFlowView({
         </CardContent>
       </Card>
 
-      {/* 近6月现金净增走势（MiniTrend 柱条，替代 recharts LineChart） */}
+      {/* 近6月现金净增走势（ECharts 折线，替代 recharts LineChart） */}
       {trend.length > 0 && (
         <Card>
           <CardContent className='p-4'>
             <Text className='text-xs font-bold text-slate-500 mb-2 block'>
               近 {trend.length} 月现金净增走势
             </Text>
-            <MiniTrend data={trend.map((t) => t.netCashChange)} height={120} color='#06b6d4' />
-            <View className='flex justify-between mt-1'>
-              {trend.map((t) => (
-                <Text key={t.period} className='text-[8px] text-slate-400'>
-                  {t.period.slice(5)}
-                </Text>
-              ))}
-            </View>
+            <EChart
+              height={130}
+              option={{
+                grid: { left: 35, right: 10, top: 15, bottom: 25 },
+                tooltip: { trigger: 'axis', formatter: (p: any) => `${p[0].name}<br/>¥${Math.round(p[0].value).toLocaleString()}` },
+                xAxis: {
+                  type: 'category',
+                  data: trend.map((t) => t.period.slice(5)),
+                  axisLabel: { fontSize: 9 },
+                },
+                yAxis: {
+                  type: 'value',
+                  axisLabel: { fontSize: 9, formatter: (v: number) => `${Math.round(v / 1000)}k` },
+                  splitLine: { lineStyle: { type: 'dashed', color: '#e2e8f0' } },
+                },
+                series: [{
+                  type: 'line',
+                  data: trend.map((t) => Math.round(t.netCashChange)),
+                  smooth: true,
+                  symbol: 'circle',
+                  symbolSize: 5,
+                  lineStyle: { color: '#06b6d4', width: 2 },
+                  itemStyle: { color: '#06b6d4' },
+                  areaStyle: {
+                    color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
+                      { offset: 0, color: 'rgba(6,182,212,0.3)' },
+                      { offset: 1, color: 'rgba(6,182,212,0.02)' },
+                    ] },
+                  },
+                }],
+              }}
+            />
           </CardContent>
         </Card>
       )}
