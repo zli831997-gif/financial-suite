@@ -13,6 +13,8 @@ export default {
     'pages/insurance/index',
     'pages/pension/index',
     'pages/tax_refund/index',
+    'pages/backup/index',
+    'pages/fire/index',
   ],
   window: {
     backgroundTextStyle: 'light',
