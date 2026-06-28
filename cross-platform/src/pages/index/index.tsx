@@ -158,6 +158,16 @@ export default function Index() {
       subtext: `双边合计: ¥${monthlyAnnContribution}/月`,
     },
     {
+      id: ModuleType.TAX_REFUND,
+      label: '年度退税模拟器',
+      desc: '汇算清缴预演 + 专项附加扣除完整填报',
+      icon: 'receipt',
+      color: 'from-emerald-500/10 to-emerald-500/0 text-emerald-600 border-emerald-100',
+      dataTitle: '个税汇算可退预估',
+      value: '点此模拟',
+      subtext: '专项扣除/大病医疗/年终奖/全年预演',
+    },
+    {
       id: ModuleType.ASSETS,
       label: '家庭净资产总管',
       desc: '统合实物、数字虚拟资产与负债结构',

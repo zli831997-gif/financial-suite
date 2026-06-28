@@ -11,6 +11,7 @@ export enum ModuleType {
   ASSETS = 'assets',
   STOCKS = 'stocks',
   DEPOSITS = 'deposits',
+  TAX_REFUND = 'tax_refund',
   CHAT = 'chat',
   VISION = 'vision',
 }

@@ -12,6 +12,7 @@ export default {
     'pages/tax/index',
     'pages/insurance/index',
     'pages/pension/index',
+    'pages/tax_refund/index',
   ],
   window: {
     backgroundTextStyle: 'light',
