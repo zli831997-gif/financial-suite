@@ -64,6 +64,20 @@ export default function Profile() {
           </View>
           <Icon name='chevronRight' size={14} className='text-slate-300' />
         </Motion>
+        <Motion
+          tapScale={0.98}
+          onClick={() => Taro.navigateTo({ url: '/pages/family/index' })}
+          className='flex items-center gap-2.5 p-3 bg-slate-50 rounded-xl'
+        >
+          <View className='w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center shrink-0'>
+            <Icon name='user' size={18} className='text-purple-600' />
+          </View>
+          <View className='flex-1'>
+            <Text className='text-sm font-bold text-slate-800 block'>家庭组队记账</Text>
+            <Text className='text-[10px] text-slate-400 block'>和家人共享账本，生成匹配码配对</Text>
+          </View>
+          <Icon name='chevronRight' size={14} className='text-slate-300' />
+        </Motion>
       </View>
     </View>
   );

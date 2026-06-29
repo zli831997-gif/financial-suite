@@ -15,6 +15,7 @@ export default {
     'pages/tax_refund/index',
     'pages/backup/index',
     'pages/fire/index',
+    'pages/family/index',
   ],
   window: {
     backgroundTextStyle: 'light',
