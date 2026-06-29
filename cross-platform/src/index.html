@@ -9,6 +9,34 @@
     <meta name="format-detection" content="telephone=no,address=no" />
     <meta name="apple-mobile-web-app-status-bar-style" content="white" />
     <title>FinanceHub</title>
+    <script>
+      // 全局错误捕获：APP 启动时若 JS 报错导致白屏，把错误显示在屏幕上
+      // 便于真机调试（无需 logcat），截图即可定位问题
+      window.__BOOT_ERRORS__ = [];
+      window.addEventListener('error', function (e) {
+        var msg = (e.message || '未知错误') + (e.filename ? '\n@ ' + e.filename.split('/').pop() + ':' + e.lineno : '');
+        window.__BOOT_ERRORS__.push(msg);
+        showBootError();
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        var msg = 'Promise未捕获: ' + (e.reason && (e.reason.message || e.reason) || '未知');
+        window.__BOOT_ERRORS__.push(msg);
+        showBootError();
+      });
+      function showBootError() {
+        setTimeout(function () {
+          // 如果 3 秒后 #app 还是空的，说明渲染失败，显示错误
+          var app = document.getElementById('app');
+          if (app && app.children.length === 0 && window.__BOOT_ERRORS__.length > 0) {
+            app.innerHTML = '<div style="padding:20px;font-size:13px;color:#dc2626;font-family:monospace;white-space:pre-wrap;word-break:break-all;">' +
+              '<b>⚠️ 启动错误（截图发给开发者）</b>\n\n' +
+              window.__BOOT_ERRORS__.join('\n---\n') +
+              '\n\nUA: ' + navigator.userAgent.slice(0, 80) +
+              '</div>';
+          }
+        }, 3000);
+      }
+    </script>
     <script><%= htmlWebpackPlugin.options.path %></script>
   </head>
   <body>

@@ -51,36 +51,48 @@ export function EChart({ option, height = 200, style }: EChartProps) {
     let disposed = false;
     getEcharts().then((echarts) => {
       if (disposed) return;
-      // H5/Capacitor：直接 init 到 canvas DOM
-      // 小程序端 Taro Canvas 会渲染成 <canvas canvasId=...>，用 createSelectorQuery 拿节点
-      const query = Taro.createSelectorQuery();
-      query.select(`#${canvasId}`).fields({ node: true, size: true }).exec(async (res) => {
-        const canvas = res?.[0]?.node;
-        if (canvas) {
-          // 小程序 Canvas 2D 节点
-          const ctx = canvas.getContext('2d');
-          canvas.width = res[0].width * 2;
-          canvas.height = res[0].height * 2;
-          const inst = echarts.init(canvas, undefined, {
-            renderer: 'canvas',
-            width: res[0].width,
-            height: res[0].height,
-          });
-          inst.setOption(option);
-          instRef.current = inst;
-        } else {
-          // H5：document.getElementById
-          const dom = document.getElementById(canvasId) as HTMLCanvasElement | null;
-          if (dom && !instRef.current) {
-            instRef.current = echarts.init(dom);
+      try {
+        // H5/Capacitor：直接 init 到 canvas DOM
+        // 小程序端 Taro Canvas 会渲染成 <canvas canvasId=...>，用 createSelectorQuery 拿节点
+        const query = Taro.createSelectorQuery();
+        query.select(`#${canvasId}`).fields({ node: true, size: true }).exec(async (res) => {
+          if (disposed) return;
+          try {
+            const canvas = res?.[0]?.node;
+            if (canvas) {
+              // 小程序 Canvas 2D 节点
+              const ctx = canvas.getContext('2d');
+              canvas.width = res[0].width * 2;
+              canvas.height = res[0].height * 2;
+              const inst = echarts.init(canvas, undefined, {
+                renderer: 'canvas',
+                width: res[0].width,
+                height: res[0].height,
+              });
+              inst.setOption(option);
+              instRef.current = inst;
+            } else {
+              // H5：document.getElementById
+              const dom = document.getElementById(canvasId) as HTMLCanvasElement | null;
+              if (dom && !instRef.current) {
+                instRef.current = echarts.init(dom);
+              }
+              instRef.current?.setOption(option);
+            }
+          } catch (e) {
+            // ECharts 初始化失败不白屏（降级为空，图表区域留白但页面可用）
+            console.warn('[EChart] init failed', e);
           }
-          instRef.current?.setOption(option);
-        }
-      });
+        });
+      } catch (e) {
+        console.warn('[EChart] query failed', e);
+      }
+    }).catch((e) => {
+      console.warn('[EChart] echarts load failed', e);
     });
     return () => {
       disposed = true;
-      instRef.current?.dispose();
+      try { instRef.current?.dispose(); } catch {}
       instRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -71,6 +71,9 @@ export default defineConfig<'webpack5'>(async (merge) => {
     },
     h5: {
       webpackChain: applyAlias,
+      // hash 路由：Capacitor WebView（https://localhost）无服务器，
+      // browser 路由会初始加载 404 白屏；用 hash 路由不依赖服务器。
+      router: { mode: 'hash' },
       // 相对路径：Capacitor WebView（file:// 或 https://localhost）下都能正确加载，
       // 避免 /js/xxx 绝对路径在某些 scheme 下 404。小程序产物不受影响（独立构建）。
       publicPath: './',
