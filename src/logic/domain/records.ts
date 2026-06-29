@@ -224,3 +224,58 @@ export function addRecordFromNotification(input: NotifRecordInput): Transaction 
 
   return record;
 }
+
+/* ────────────────────────────────────────────────────────────
+ * 标签系统（场景化记账：#充电 #车险 #宝宝 #装修 等）
+ * 不依赖固定分类，用户自由打标签，按标签筛选/汇总。
+ * ──────────────────────────────────────────────────────────── */
+
+/** 预设常用标签（用户也可自定义输入），覆盖常见场景记账 */
+export const PRESET_TAGS = [
+  '充电', '加油', '车险', '保养', '停车', // 车相关
+  '宝宝', '教育', '医疗', '健身', // 人相关
+  '装修', '家电', '房租', '物业', // 房相关
+  '旅游', '聚餐', '购物', '人情', // 生活
+  '报销', '副业', '理财', // 钱相关
+];
+
+/**
+ * 给指定记录打标签（覆盖原有标签）。
+ */
+export function setRecordTags(id: string, tags: string[]): void {
+  const records = getRecords();
+  const idx = records.findIndex((r) => r.id === id);
+  if (idx < 0) return;
+  records[idx].tags = tags.filter((t) => t.trim()).map((t) => t.replace(/^#/, ''));
+  saveRecords(records);
+}
+
+/**
+ * 查询含指定标签的所有记录。
+ */
+export function getRecordsByTag(tag: string): Transaction[] {
+  const t = tag.replace(/^#/, '');
+  return getRecords().filter((r) => r.tags?.includes(t));
+}
+
+/**
+ * 统计所有标签的使用情况（用于标签筛选条 + 标签总账）。
+ * @returns [{ tag, count, totalExpense, totalIncome }]
+ */
+export function getTagStats(): Array<{ tag: string; count: number; totalExpense: number; totalIncome: number }> {
+  const records = getRecords();
+  const map = new Map<string, { count: number; totalExpense: number; totalIncome: number }>();
+  for (const r of records) {
+    if (!r.tags || r.tags.length === 0) continue;
+    for (const tag of r.tags) {
+      const cur = map.get(tag) || { count: 0, totalExpense: 0, totalIncome: 0 };
+      cur.count++;
+      if (r.type === 'expense') cur.totalExpense += r.amount;
+      else cur.totalIncome += r.amount;
+      map.set(tag, cur);
+    }
+  }
+  return Array.from(map.entries())
+    .map(([tag, v]) => ({ tag, ...v }))
+    .sort((a, b) => b.totalExpense + b.totalIncome - a.totalExpense - a.totalIncome);
+}

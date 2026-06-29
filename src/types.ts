@@ -33,6 +33,8 @@ export interface Transaction {
   source?: 'manual' | 'template' | 'notification';
   /** 去重键（通知自动记账用：packageName+postTime+text 的哈希），跨重启幂等 */
   dedupeKey?: string;
+  /** 自定义标签（场景化记账：#充电 #车险 #宝宝 #装修 等），可多个 */
+  tags?: string[];
 }
 
 export interface Asset {

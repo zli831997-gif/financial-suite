@@ -5,7 +5,7 @@ import type { Transaction } from '@finance/types';
 import type { Account } from '@finance/logic/domain/accounts';
 import type { Template } from '@finance/logic/domain/templates';
 import { isAutoLoggedToday } from '@finance/logic/domain/templates';
-import { getRecords, addRecord, deleteRecord, ensureRecords } from '@finance/logic/domain/records';
+import { getRecords, addRecord, deleteRecord, ensureRecords, PRESET_TAGS, getTagStats } from '@finance/logic/domain/records';
 import { getTemplates, updateTemplate, ensureTemplates } from '@finance/logic/domain/templates';
 import { getAccounts, ensureAccounts } from '@finance/logic/domain/accounts';
 import { Card, CardContent } from '../../components/ui/card';
@@ -39,6 +39,12 @@ export default function Accounting() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [accountId, setAccountId] = useState('acc_wechat');
+  // 补记日期（默认今天）
+  const [recordDate, setRecordDate] = useState(() => new Date().toISOString().split('T')[0]);
+  // 标签（场景化记账）
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // 标签筛选（明细按标签过滤）
+  const [filterTag, setFilterTag] = useState<string>('');
 
   // 触发重渲染的版本号（domain 层直接改 storage，需手动刷新视图）
   const [version, setVersion] = useState(0);
@@ -65,6 +71,8 @@ export default function Accounting() {
     if (!amount || isNaN(parseFloat(amount))) return;
     const now = new Date();
     const acc = accounts.find((a) => a.id === accountId);
+    // 用用户选的日期，时间取当前（补记昨天的账，时间用现在）
+    const useTodayTime = recordDate === new Date().toISOString().split('T')[0];
     const newTx: Transaction = {
       id: Date.now().toString(),
       type,
@@ -72,14 +80,18 @@ export default function Accounting() {
       category,
       accountId,
       accountName: acc?.name,
-      date: now.toISOString().split('T')[0],
-      time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
+      date: recordDate,
+      time: useTodayTime
+        ? `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+        : '12:00',
       note: note || category,
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
     };
     addRecord(newTx);
     setShowModal(false);
     setAmount('');
     setNote('');
+    setSelectedTags([]);
     refresh();
   };
 
@@ -151,7 +163,12 @@ export default function Accounting() {
       ? ['餐饮', '交通', '购物', '娱乐', '住房', '医疗', '其他']
       : ['工资', '投资理财', '分红', '兼职', '其他'];
 
-  const list = billView === 'all' ? transactions : transactions.filter((t) => t.type === billView);
+  // 列表：按收支类型 + 标签筛选
+  const list = transactions
+    .filter((t) => billView === 'all' || t.type === billView)
+    .filter((t) => !filterTag || t.tags?.includes(filterTag))
+    .sort((a, b) => (b.date + (b.time || '') < a.date + (a.time || '') ? -1 : 1)); // 按日期降序，补记的昨天会排到正确位置
+  const tagStats = getTagStats();
 
   return (
     <View className='p-4 space-y-4 max-w-md mx-auto w-full min-h-screen bg-slate-50'>
@@ -163,7 +180,11 @@ export default function Accounting() {
         </View>
         <Motion
           tapScale={0.95}
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setRecordDate(new Date().toISOString().split('T')[0]);
+            setSelectedTags([]);
+            setShowModal(true);
+          }}
           className='px-3 py-1.5 bg-indigo-600 text-white rounded-xl font-semibold text-xs flex items-center gap-1'
         >
           <Icon name='plus' size={14} /> 记一笔
@@ -256,8 +277,30 @@ export default function Accounting() {
             </Card>
           ) : (
             <View className='space-y-2.5'>
+              {/* 标签筛选条（有标签数据时才显示）*/}
+              {tagStats.length > 0 && (
+                <View className='flex gap-1.5 flex-wrap pb-1'>
+                  <Motion
+                    tapScale={0.95}
+                    onClick={() => setFilterTag('')}
+                    className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${filterTag === '' ? 'bg-slate-800 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}
+                  >
+                    全部
+                  </Motion>
+                  {tagStats.slice(0, 8).map((ts) => (
+                    <Motion
+                      key={ts.tag}
+                      tapScale={0.95}
+                      onClick={() => setFilterTag(filterTag === ts.tag ? '' : ts.tag)}
+                      className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${filterTag === ts.tag ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}
+                    >
+                      #{ts.tag} {ts.count}
+                    </Motion>
+                  ))}
+                </View>
+              )}
               <Text className='text-[10px] text-slate-400 text-center block'>
-                💡 点击账单右侧按钮删除
+                💡 点击账单右侧按钮删除 · 可按标签筛选
               </Text>
               {list.map((t) => (
                 <View
@@ -277,6 +320,15 @@ export default function Accounting() {
                       <Text className='text-[10px] text-slate-400 block'>
                         {t.date} · {t.category}
                       </Text>
+                      {t.tags && t.tags.length > 0 && (
+                        <View className='flex gap-1 mt-1 flex-wrap'>
+                          {t.tags.map((tag) => (
+                            <Text key={tag} className='text-[9px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded'>
+                              #{tag}
+                            </Text>
+                          ))}
+                        </View>
+                      )}
                     </View>
                   </View>
                   <View className='flex items-center gap-2 shrink-0'>
@@ -472,6 +524,62 @@ export default function Accounting() {
                 onInput={(e) => setNote(e.detail.value)}
                 className='w-full bg-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800'
               />
+            </View>
+
+            {/* 日期选择（支持补记昨天/前几天）*/}
+            <View className='space-y-1'>
+              <Text className='text-xs font-semibold text-slate-500 block'>日期（可补记往日）</Text>
+              <View className='flex gap-1.5'>
+                {/* 快捷按钮：今天/昨天/前天 */}
+                {[0, 1, 2].map((offset) => {
+                  const d = new Date();
+                  d.setDate(d.getDate() - offset);
+                  const ds = d.toISOString().split('T')[0];
+                  const label = offset === 0 ? '今天' : offset === 1 ? '昨天' : '前天';
+                  return (
+                    <Motion
+                      key={offset}
+                      tapScale={0.95}
+                      onClick={() => setRecordDate(ds)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg ${recordDate === ds ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}
+                    >
+                      {label}
+                    </Motion>
+                  );
+                })}
+                {/* 手动选日期 */}
+                <Input
+                  type='text'
+                  value={recordDate}
+                  onInput={(e) => setRecordDate(e.detail.value)}
+                  placeholder='YYYY-MM-DD'
+                  className='flex-1 bg-slate-100 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-700'
+                />
+              </View>
+            </View>
+
+            {/* 标签选择（场景化记账：#充电 #车险 等）*/}
+            <View className='space-y-1.5'>
+              <Text className='text-xs font-semibold text-slate-500 block'>
+                标签 {selectedTags.length > 0 && <Text className='text-indigo-600'>（已选 {selectedTags.length}）</Text>}
+              </Text>
+              <View className='flex gap-1.5 flex-wrap'>
+                {PRESET_TAGS.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  return (
+                    <Motion
+                      key={tag}
+                      tapScale={0.95}
+                      onClick={() => {
+                        setSelectedTags(active ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag]);
+                      }}
+                      className={`px-2.5 py-1 text-xs font-medium border rounded-lg ${active ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-slate-100 text-slate-600'}`}
+                    >
+                      {active ? '✓ ' : '#'}{tag}
+                    </Motion>
+                  );
+                })}
+              </View>
             </View>
 
             <Motion
