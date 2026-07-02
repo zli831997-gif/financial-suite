@@ -8,7 +8,6 @@ import { TaxView } from './components/TaxView';
 import { InsuranceView } from './components/InsuranceView';
 import { AssetsView } from './components/AssetsView';
 import { StocksView } from './components/StocksView';
-import { ChatView } from './components/ChatView';
 import { DataCollectionView } from './components/DataCollectionView';
 import { DepositsView } from './components/DepositsView';
 import { PensionView } from './components/PensionView';
@@ -30,7 +29,6 @@ import {
   LayoutDashboard, 
   Wallet, 
   Grid, 
-  MessageSquare, 
   User,
   ChevronLeft,
   Wifi,
@@ -180,7 +178,6 @@ export default function App() {
       case ModuleType.ASSETS: return '资产配置总览';
       case ModuleType.STOCKS: return 'A股持仓明细';
       case ModuleType.DEPOSITS: return '储蓄存款账本';
-      case ModuleType.CHAT: return 'AI 个人智脑';
       case ModuleType.VISION: return '财务愿景画卷';
       default: return 'FinanceHub';
     }
@@ -189,7 +186,7 @@ export default function App() {
   const renderModule = () => {
     if (activeTab === 'tools') {
       // If no subtool is actively focused on sub-navigation, show the complete tool selector index list
-      if (currentModule === ModuleType.DASHBOARD || currentModule === ModuleType.ACCOUNTING || currentModule === ModuleType.CHAT || currentModule === ModuleType.PROFILE || currentModule === ModuleType.VISION) {
+      if (currentModule === ModuleType.DASHBOARD || currentModule === ModuleType.ACCOUNTING || currentModule === ModuleType.PROFILE || currentModule === ModuleType.VISION) {
         return (
           <MobileHub 
             financeState={financeState}
@@ -264,8 +261,6 @@ export default function App() {
         return <StocksView />;
       case ModuleType.DEPOSITS: 
         return <DepositsView financeState={financeState} />;
-      case ModuleType.CHAT: 
-        return <ChatView />;
       case ModuleType.VISION: 
         return <DataCollectionView financeState={financeState} growth={growth} onUpdateState={setFinanceState} onProfileBonus={onProfileBonus} transactionsCount={transactions.length} />;
       default: 

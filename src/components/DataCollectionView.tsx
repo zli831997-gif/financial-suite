@@ -29,7 +29,6 @@ import {
   CheckCircle2, 
   HelpCircle,
   Clock,
-  Sparkles,
   ChevronRight,
   Calculator,
   Lock,
@@ -37,8 +36,6 @@ import {
   DollarSign,
   HeartPulse,
   Flame,
-  Loader2,
-  Image as ImageIcon,
   Plus,
   Trash2,
   Coins,
@@ -116,11 +113,6 @@ export function DataCollectionView({ financeState, growth, onUpdateState, onProf
   const [consumerLoanDebt, setConsumerLoanDebt] = useState(0);
   const [otherPersonalDebt, setOtherPersonalDebt] = useState(financeState.otherLiabilities || 5000);
 
-  // --- Vision Board states (Persistent goals image) ---
-  const [prompt, setPrompt] = useState('');
-  const [visionImage, setVisionImage] = useState<string | null>(() => storage.get<string>(KEYS.VISION_IMG));
-  const [isVisionLoading, setIsVisionLoading] = useState(false);
-  const [visionError, setVisionError] = useState('');
 
   // 老版数据迁移
   const [legacyJson, setLegacyJson] = useState('');
@@ -429,29 +421,6 @@ export function DataCollectionView({ financeState, growth, onUpdateState, onProf
   };
 
   // Generate Image via AI
-  const handleGenerateVisionImg = async () => {
-    if (!prompt.trim() || isVisionLoading) return;
-    setIsVisionLoading(true);
-    setVisionError('');
-    try {
-      const res = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          prompt: "An elegant, highly evocative and rich cinematic scene representing financial freedom: " + prompt 
-        })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setVisionImage(data.imageUrl);
-      storage.set(KEYS.VISION_IMG, data.imageUrl);
-    } catch (err: any) {
-      console.error(err);
-      setVisionError(err.message || '生成愿景画失败，请重试');
-    } finally {
-      setIsVisionLoading(false);
-    }
-  };
 
   // Auto calculate values
   const totalSavings = savingsList.reduce((acc, s) => acc + s.amount, 0);
@@ -1309,63 +1278,6 @@ export function DataCollectionView({ financeState, growth, onUpdateState, onProf
         <span>确认并立即重算全盘资产 & 纳税精算</span>
       </button>
 
-      {/* LIFE VISION AI GENERATION SECTION */}
-      <div className="space-y-2 pt-1 border-t border-slate-100">
-        <div className="flex items-center gap-1.5">
-          <ImageIcon size={14} className="text-pink-500" />
-          <h4 className="text-[11px] font-black text-indigo-950 uppercase tracking-wider">终身财务奋斗美好未来愿景 AI 绘卷</h4>
-        </div>
-
-        <Card className="shadow-xs border border-pink-100 bg-pink-50/10">
-          <CardContent className="p-4 space-y-3.5 text-left">
-            <p className="text-[9px] text-slate-400 leading-normal">
-              设想一个激发您努力工作的财务自由奋斗目标（例如：“在海边有一座落地窗白房子，门前开满粉色玫瑰树，晚风拂过海面”），利用 Gemini 生成精美愿景图：
-            </p>
-            <div className="flex gap-1.5">
-              <input
-                className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-pink-400 focus:outline-none"
-                placeholder="我的目标是：拥有一间看得见群山雪景的日式咖啡屋..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleGenerateVisionImg()}
-              />
-              <button
-                type="button"
-                onClick={handleGenerateVisionImg}
-                disabled={isVisionLoading || !prompt.trim()}
-                className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-bold hover:bg-slate-850 disabled:opacity-50 transition"
-              >
-                {isVisionLoading ? (
-                  <Loader2 className="animate-spin w-3 h-3" />
-                ) : (
-                  <Sparkles className="w-3 h-3 text-pink-400" />
-                )}
-                <span>绘制</span>
-              </button>
-            </div>
-
-            {visionError && <div className="text-rose-500 text-[9px]">{visionError}</div>}
-
-            {visionImage && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative group bg-slate-50"
-              >
-                <img 
-                  src={visionImage} 
-                  referrerPolicy="no-referrer" 
-                  alt="Dynamic future financial vision goal" 
-                  className="w-full h-44 object-cover" 
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-slate-950/80 p-2 text-white text-[9px] font-semibold text-center leading-normal">
-                  🌅 「我的财富动力源泉」：{prompt || '终身奋斗极简愿景图'}
-                </div>
-              </motion.div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="p-3 bg-slate-100 rounded-2xl border border-slate-200 text-center flex items-center justify-center gap-1.5 opacity-90 text-[9px] text-slate-400">
         <Lock size={12} className="text-slate-400" />

@@ -27,7 +27,7 @@ interface DashboardViewProps {
   financeState: FinanceAppState;
   growth: GrowthState;
   onUpdateState: (state: FinanceAppState) => void;
-  onNavigateTab: (tab: 'home' | 'accounting' | 'reports' | 'profile' | 'tools' | 'chat') => void;
+  onNavigateTab: (tab: 'home' | 'accounting' | 'reports' | 'profile' | 'tools') => void;
   onAddTransaction?: (t: Transaction) => void;
   onPunchIn: () => void;
   onProfileBonus: (reason: string, points: number) => void;
