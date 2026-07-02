@@ -30,7 +30,9 @@ jobs:
         run: npm run build
 
       - name: Sync to Android
-        run: npx cap copy android
+        # update (not just copy) so Capacitor regenerates the
+        # capacitor-cordova-android-plugins subproject that .gitignore omits.
+        run: npx cap sync android
 
       - name: Build Debug APK
         working-directory: android
